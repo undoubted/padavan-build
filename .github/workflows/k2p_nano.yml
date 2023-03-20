@@ -1,0 +1,57 @@
+name: K2P_nano
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    env:
+      TNAMES: K2P_nano
+      IMAGE_DIR: /opt/images
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Checkout rt-n56u
+        run: |
+          git clone --depth=1 https://github.com/undoubted/Padavan-KVR.git rt-n56u
+          cd ./rt-n56u
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_CURL=y/CONFIG_FIRMWARE_INCLUDE_CURL=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_NAPT66=y/CONFIG_FIRMWARE_INCLUDE_NAPT66=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_VLMCSD=y/CONFIG_FIRMWARE_INCLUDE_VLMCSD=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_TTYD=y/CONFIG_FIRMWARE_INCLUDE_TTYD=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_HTOP=y/CONFIG_FIRMWARE_INCLUDE_HTOP=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_NANO=y/CONFIG_FIRMWARE_INCLUDE_NANO=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_IPERF3=y/CONFIG_FIRMWARE_INCLUDE_IPERF3=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_MTR=y/CONFIG_FIRMWARE_INCLUDE_MTR=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_SOCAT=y/CONFIG_FIRMWARE_INCLUDE_SOCAT=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_MSD_LITE=y/CONFIG_FIRMWARE_INCLUDE_MSD_LITE=n/' trunk/configs/templates/K2P_nano.config
+          sed -i 's/CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n/CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y/' trunk/build_firmware_modify
+      - name: Prepare environment
+        run: |
+          mkdir -p ${IMAGE_DIR}
+          sudo apt update
+          sudo apt install libtool-bin gperf python-docutils autopoint gettext
+      - name: Prepare toolchain
+        run: |
+          cd ./rt-n56u/toolchain-mipsel
+          sh dl_toolchain.sh
+      - name: Build images
+        run: |
+          cd ./rt-n56u/trunk
+          for TNAME in $(echo $TNAMES | tr "," "\n"); do
+            fakeroot ./build_firmware_modify $TNAME
+            cp -f images/*.trx ${IMAGE_DIR}/
+            ./clear_tree
+          done
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            ${{ env.IMAGE_DIR }}/*.trx

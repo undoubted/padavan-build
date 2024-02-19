@@ -1,4 +1,4 @@
-name: K2P_nano
+name: K2P_nano_4.4
 
 on:
   release:
@@ -11,7 +11,7 @@ jobs:
     env:
       IMAGE_DIR: /opt/images
     runs-on: ubuntu-20.04
-    if: ${{ contains(github.ref, '-k3') }}
+    if: ${{ contains(github.ref, '-k4') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
           sudo apt install libtool-bin gperf python-docutils autopoint gettext
       - name: Checkout rt-n56u
         run: |
-          git clone --depth=1 https://github.com/undoubted/Padavan-KVR.git rt-n56u
+          git clone --depth=1 https://github.com/undoubted/padavan-4.4.git rt-n56u
       - name: Prepare toolchain
         run: |
           cd ./rt-n56u/toolchain-mipsel
